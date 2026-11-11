@@ -1,0 +1,6 @@
+__pycache__/
+kiem_thu/anh/
+kiem_thu/*.png
+kiem_thu/_kiemtra_mock.html
+*.pyc
+.DS_Store

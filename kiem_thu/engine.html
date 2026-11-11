@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8"><title>engine test</title>
+<script>
+const BASE = location.origin + location.pathname.replace(/kiem_thu\/[^/]*$/, '');
+let cw = null, readyRes, readyP = new Promise((r) => (readyRes = r)), buildRes = {}, prog = 0;
+window.T = {
+  async boot() {
+    await navigator.serviceWorker.register(BASE + 'sw.js'); await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) await new Promise((r) => navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }));
+    cw = new Worker(BASE + 'assets/cpp/compiler-worker.js');
+    cw.onmessage = (e) => { const m = e.data; if (m.t === 'ready') readyRes(true); else if (m.t === 'fatal') readyRes(m.msg); else if (m.t === 'built') buildRes[m.id](m); else if (m.t === 'progress') prog = m.loaded; };
+    cw.postMessage({ t: 'init', base: BASE });
+    return readyP;
+  },
+  build(code, opt) { const id = Math.random(); return new Promise((r) => { buildRes[id] = r; cw.postMessage({ t: 'build', id, code, opt }); }); },
+  run(wasm, inputs, timeoutMs) {
+    return new Promise((res) => {
+      const w = new Worker(BASE + 'assets/cpp/runner-worker.js'); let out = '', err = '', q = (inputs || []).slice(), asked = 0, t0 = performance.now();
+      const to = setTimeout(() => { w.terminate(); res({ out, err, code: 'timeout', asked, ms: Math.round(performance.now() - t0) }); }, timeoutMs || 20000);
+      w.onmessage = (e) => { const m = e.data;
+        if (m.t === 'out') m.parts.forEach((p) => (p.k === 'o' ? (out += p.s) : (err += p.s)));
+        else if (m.t === 'need_input') { asked++; const v = q.length ? q.shift() : null; navigator.serviceWorker.controller.postMessage(v === null ? { t: 'input', token: m.token, eof: true } : { t: 'input', token: m.token, text: v }); }
+        else if (m.t === 'done') { clearTimeout(to); w.terminate(); res({ out, err, code: m.code, msg: m.msg, asked, ms: Math.round(performance.now() - t0) }); } };
+      w.onerror = (e) => { clearTimeout(to); res({ out, err, code: 'onerror', msg: e.message }); };
+      w.postMessage({ t: 'run', base: BASE, wasm, input: { url: BASE + '__input' } }, [wasm.buffer]);
+    });
+  },
+};
+</script>
