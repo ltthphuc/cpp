@@ -19,7 +19,7 @@ Phòng thực hành **C++ chạy trên web**: học sinh viết, biên dịch v�
 |---|---|
 | `try` / `catch` / `throw` (ngoại lệ) | Kiểm tra lỗi bằng `if` |
 | Đồ họa (`graphics.h`, SFML, SDL…) | Chỉ chạy chương trình dạng văn bản |
-| Đa luồng (`thread`, `mutex`…) | — |
+| Đa luồng (`thread`, `mutex`…); `this_thread::sleep_for` không chờ | Dùng `Sleep(ms)` (windows.h), `usleep`, `sleep` để tạm dừng |
 | `freopen("input.txt", …)` đọc file đầu vào | Gõ dữ liệu vào ô nhập; file tạo bằng `ofstream` rồi đọc lại bằng `ifstream` vẫn dùng được (nằm trong bộ nhớ trang) |
 
 Chuẩn: C++17 với libc++ 8 (Clang 8). Không có `<bit>`, `<numbers>`, `std::format`… của C++20.
